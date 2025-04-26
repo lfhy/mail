@@ -1,6 +1,8 @@
 package mail
 
 import (
+	"crypto/tls"
+
 	"github.com/lfhy/mail/gomail"
 	"golang.org/x/net/proxy"
 )
@@ -12,55 +14,19 @@ type MailConfig struct {
 	Port     int    // Send mail port: 465
 	From     string // Send mail show from: testuser
 
-	Subject string       // Send mail subject: test mail
-	Content string       // Send mail content: test mail content
-	Dialer  proxy.Dialer // Send mail dialer
-
+	Subject    string       // Send mail subject: test mail
+	Content    string       // Send mail content: test mail content
+	Dialer     proxy.Dialer // Send mail dialer
+	TLSConfig  *tls.Config
 	mailDialer *gomail.Dialer
 }
 
-func New() *MailConfig {
-	return &MailConfig{}
-}
-
-func (m *MailConfig) SetUser(user string) *MailConfig {
-	m.User = user
-	return m
-}
-
-func (m *MailConfig) SetPassword(password string) *MailConfig {
-	m.Password = password
-	return m
-}
-
-func (m *MailConfig) SetHost(host string) *MailConfig {
-	m.Host = host
-	return m
-}
-
-func (m *MailConfig) SetPort(port int) *MailConfig {
-	m.Port = port
-	return m
-}
-
-func (m *MailConfig) SetFrom(from string) *MailConfig {
-	m.From = from
-	return m
-}
-
-func (m *MailConfig) SetSubject(subject string) *MailConfig {
-	m.Subject = subject
-	return m
-}
-
-func (m *MailConfig) SetContent(content string) *MailConfig {
-	m.Content = content
-	return m
-}
-
-func (m *MailConfig) SetDialer(dialer proxy.Dialer) *MailConfig {
-	m.Dialer = dialer
-	return m
+func New(opts ...Option) *MailConfig {
+	var mc MailConfig
+	for _, opt := range opts {
+		opt(&mc)
+	}
+	return &mc
 }
 
 func (m *MailConfig) Send(mailTo ...string) error {
@@ -104,6 +70,9 @@ func (m *MailConfig) SendMail(subject, content string, mailTo ...string) error {
 		m.mailDialer = gomail.NewDialer(m.Host, m.Port, m.User, m.Password)
 		if m.Dialer != nil {
 			m.mailDialer.Dialer = m.Dialer
+		}
+		if m.TLSConfig != nil {
+			m.mailDialer.TLSConfig = m.TLSConfig
 		}
 	}
 	return m.mailDialer.DialAndSend(msg)

@@ -1,5 +1,5 @@
 # Gomail
-[![Build Status](https://travis-ci.org/go-gomail/gomail.svg?branch=v2)](https://travis-ci.org/go-gomail/gomail) [![Code Coverage](http://gocover.io/_badge/gopkg.in/gomail.v2)](http://gocover.io/gopkg.in/gomail.v2) [![Documentation](https://godoc.org/gopkg.in/gomail.v2?status.svg)](https://godoc.org/gopkg.in/gomail.v2)
+[![Documentation](https://godoc.org/github.com/lfhy/mail)](https://godoc.org/github.com/lfhy/mail)
 
 ## Introduction
 
@@ -25,21 +25,22 @@ Gomail supports:
 - Automatic encoding of special characters
 - SSL and TLS
 - Sending multiple emails with the same SMTP connection
+- Support use proxy dialer
 
 
 ## Documentation
 
-https://godoc.org/gopkg.in/gomail.v2
+https://godoc.org/github.com/lfhy/mail
 
 
 ## Download
 
-    go get gopkg.in/gomail.v2
+    go install github.com/lfhy/mail@latest
 
 
 ## Examples
 
-See the [examples in the documentation](https://godoc.org/gopkg.in/gomail.v2#example-package).
+See the [examples in the documentation](https://godoc.org/github.com/lfhy/mail).
 
 
 ## FAQ
@@ -50,22 +51,22 @@ If you get this error it means the certificate used by the SMTP server is not
 considered valid by the client running Gomail. As a quick workaround you can
 bypass the verification of the server's certificate chain and host name by using
 `SetTLSConfig`:
-
+```go
     package main
 
     import (
     	"crypto/tls"
 
-    	"gopkg.in/gomail.v2"
+    	"github.com/lfhy/mail"
     )
 
     func main() {
-    	d := gomail.NewDialer("smtp.example.com", 587, "user", "123456")
-    	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
-
+    	d := mail.New(mail.SetTLSConfig(&tls.Config{InsecureSkipVerify: true}))
+        // or use mail.SetSkipTLS(true) to skip TLS
+        // d := mail.New(mail.SetSkipTLS(true))
         // Send emails using d.
     }
-
+```
 Note, however, that this is insecure and should not be used in production.
 
 

@@ -1,4 +1,4 @@
-package gomail_test
+package mail
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"log"
 	"time"
 
-	"gopkg.in/gomail.v2"
+	"github.com/lfhy/mail/gomail"
 )
 
 func Example() {

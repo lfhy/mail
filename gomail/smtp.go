@@ -1,6 +1,7 @@
 package gomail
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"io"
@@ -8,6 +9,8 @@ import (
 	"net/smtp"
 	"strings"
 	"time"
+
+	"golang.org/x/net/proxy"
 )
 
 // A Dialer is a dialer to an SMTP server.
@@ -33,6 +36,10 @@ type Dialer struct {
 	// LocalName is the hostname sent to the SMTP server with the HELO command.
 	// By default, "localhost" is sent.
 	LocalName string
+	// Dialer represents the dialer used to connect to the SMTP server.
+	Dialer proxy.Dialer
+	// Timeout -1 means no timeout.
+	Timeout time.Duration
 }
 
 // NewDialer returns a new SMTP Dialer. The given parameters are used to connect
@@ -58,9 +65,43 @@ func NewPlainDialer(host string, port int, username, password string) *Dialer {
 // Dial dials and authenticates to an SMTP server. The returned SendCloser
 // should be closed when done using it.
 func (d *Dialer) Dial() (SendCloser, error) {
-	conn, err := netDialTimeout("tcp", addr(d.Host, d.Port), 10*time.Second)
-	if err != nil {
-		return nil, err
+	if d.Timeout == 0 {
+		d.Timeout = 10 * time.Second
+	}
+	server := addr(d.Host, d.Port)
+	var conn net.Conn
+	if d.Dialer != nil {
+		ctxDialer, ok := d.Dialer.(proxy.ContextDialer)
+		if ok && d.Timeout != -1 {
+			ctx, cancel := context.WithTimeout(context.Background(), d.Timeout)
+			defer cancel()
+			c, err := ctxDialer.DialContext(ctx, "tcp", server)
+			if err != nil {
+				return nil, err
+			}
+			conn = c
+		} else {
+			c, err := d.Dialer.Dial("tcp", server)
+			if err != nil {
+				return nil, err
+			}
+			conn = c
+		}
+	} else {
+		if d.Timeout != -1 {
+			c, err := net.Dial("tcp", server)
+			if err != nil {
+				return nil, err
+			}
+			conn = c
+		} else {
+			c, err := netDialTimeout("tcp", server, d.Timeout)
+			if err != nil {
+				return nil, err
+			}
+			conn = c
+		}
+
 	}
 
 	if d.SSL {
